@@ -24,6 +24,8 @@ import sqlite3
 from os import walk
 from os.path import splitext,join, abspath
 import sys
+from time import sleep, strptime
+from types import IntType
 
 from optparse import OptionParser
 
@@ -124,46 +126,120 @@ for (artist, album,title) in d:
 	if artist not in artists:
 		artists[artist] = {}
 	artists[artist][album] = title
-#print artists
-print sorted(artists.keys())
+print artists.keys()
 
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 def getAlbums(artist):
-	q = ws.Query()
+	cur.execute("select album, asin, date from musicbrainz where artist=?", (artist,))
+	d = cur.fetchall()
+	if d == []:
+		q = ws.Query()
 
-	f = ws.ArtistFilter(name=artist, limit=5)
-	artistResults = q.getArtists(f)
+		f = ws.ArtistFilter(name=artist, limit=5)
+		artistResults = q.getArtists(f)
 
-	assert artistResults[0].artist.name == artist, (artistResults[0].artist.name,artist)
-	artist_id = artistResults[0].artist.id
+		assert artistResults[0].artist.name == artist, (artistResults[0].artist.name,artist)
+		artist_id = artistResults[0].artist.id
 
-	try:
-		# The result should include all official albums.
-		#
-		inc = ws.ArtistIncludes(
-			releases=(m.Release.TYPE_OFFICIAL, m.Release.TYPE_ALBUM),
-			tags=True, releaseGroups=True)
-		artist = q.getArtistById(artist_id, inc)
-	except ws.WebServiceError, e:
-		raise
+		release_ids = []
 
-	if len(artist.getReleases()) == 0:
-		raise Exception, "No releases found for %s"%artist
+		for kind in (m.Release.TYPE_ALBUM, m.Release.TYPE_EP):
+			try:
+				# The result should include all official albums.
+				#
+				inc = ws.ArtistIncludes(
+					releases=(m.Release.TYPE_OFFICIAL, kind),
+					tags=True)
+				release_ids.extend([x.id for x in q.getArtistById(artist_id, inc).getReleases()])
+			except ws.WebServiceError, e:
+				raise
 
-	ret = {}
-	for release in artist.getReleases():
-		inc = ws.ReleaseIncludes(artist=True, releaseEvents=True, labels=True,
-		discs=True, tracks=True, releaseGroup=True)
-		release = q.getReleaseById(release.id, inc)
-		ret[release.title] = {"when":release.getEarliestReleaseDate(), "ASIN":release.asin}
+		if release_ids == []:
+			raise Exception, "No releases found for %s"%artist
+
+		ret = {}
+		for id in release_ids:
+			inc = ws.ReleaseIncludes(artist=True, releaseEvents=True)
+			while True:
+				try:
+					release = q.getReleaseById(id, inc)
+					break
+				except ws.WebServiceError:
+					sleep(2)
+			if release.asin == None: # ignore these
+				continue
+			title = release.title
+			if title.find("(disc ")!=-1:
+				title = title[:title.find("(disc ")].strip()
+			ret[title] = {"when":release.getEarliestReleaseDate(), "ASIN":release.asin}
+			print "got", title
+
+		for title in ret:
+			cur.execute("insert into musicbrainz values(?, ?, ?, ?)", (artist, title, ret[title]["ASIN"], ret[title]["when"]))
+		con.commit()
+	else:
+		ret = {}
+		for (album, asin, when) in d:
+			ret[album] = {"asin":asin, "when":when}
+	for title in ret:
+		try:
+			ret[title]["when"] = strptime(ret[title]["when"], "%Y-%m-%d")
+		except ValueError:
+			if ret[title]["when"].find("-")!=-1:
+				ret[title]["when"] = int(ret[title]["when"][:ret[title]["when"].find("-")])
+			else:
+				ret[title]["when"] = int(ret[title]["when"])
+		except TypeError:
+			if type(ret[title]["when"]) == IntType:
+				ret[title]["when"] = (ret[title]["when"], 0,0,0,0,0,0,0,0)
+			else:
+				raise
 	return ret
 
-for artist in artists.keys():
+most_tracks = sorted(artists.keys(), lambda x,y:cmp(sum(artists[y].values()), sum(artists[x].values())))
+print most_tracks
+
+cur.execute("select name from sqlite_master where type='table' and name='musicbrainz'")
+if len(cur.fetchall())==0:
+	cur.execute("create table musicbrainz (artist text(100), album text(100), asin text(20), date integer, primary key(artist, album));")
+	con.commit()
+
+def compact(inp):
+	inp = inp.lower()
+	return inp.replace("'","")
+
+for artist in most_tracks:
 	print "artist",artist
 	albums = getAlbums(artist)
-	print artist, albums
-	break
+	print artist, albums.keys(), artists[artist]
+
+	newest = None
+	for got_a in artists[artist].keys():
+		use_a = None
+		if got_a in albums.keys():
+			use_a = got_a
+		else:
+			items = [x for x in compact(got_a).split() if x not in ("(ep)",)]
+			for k in albums.keys():
+				for i in items:
+					if i not in compact(k):
+						break
+				else:
+					print "found all bits", items, k
+					use_a = k
+					break
+		if use_a != None:
+			if newest == None or newest < albums[use_a]['when']:
+				newest = albums[use_a]['when']
+		else:
+			print "Can't find '%s'"%got_a, albums.keys()
+
+	for a in albums.keys():
+		if albums[a]['when'] > newest:
+			print "don't have",a
+			raise Exception,albums[a]
+	#break
 
