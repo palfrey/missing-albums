@@ -87,7 +87,10 @@ if opts.walk:
 			cur.execute("select artist,album,title,duration from songs where fullpath=?", (fp,))
 			d = cur.fetchall()
 			if d==[]:
-				data = File(fp, options=options)
+				try:
+					data = File(fp, options=options)
+				except IOError:
+					data = None
 				if data == None:
 					cur.execute("insert into songs (fullpath,duration) values(?,?)",(fp, -1))
 					con.commit()
