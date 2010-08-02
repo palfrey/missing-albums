@@ -9,7 +9,6 @@ def searchByTitle(artist, album):
 	ret = {}
 	data = amazon.item_search("Music", Artist=artist, Title=album, ResponseGroup="Small,ItemAttributes,Images,OfferSummary")
 
-	open("dump","w").write(etree.tostring(data.Items.Item, pretty_print=True))
 	binding = data.Items.Item.ItemAttributes.Binding
 	assert binding == "Audio CD", binding
 
