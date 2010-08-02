@@ -132,7 +132,7 @@ print artists.keys()
 
 logging.basicConfig()
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
 
 def getAlbums(artist):
 	cur.execute("select album, asin, date from musicbrainz where artist=?", (artist,))
