@@ -16,6 +16,8 @@ from mutagen.musepack import Musepack
 from mutagen.monkeysaudio import MonkeysAudio
 from mutagen.optimfrog import OptimFROG
 
+import amazon
+
 import logging
 import musicbrainz2.webservice as ws
 import musicbrainz2.model as m
@@ -174,11 +176,13 @@ def getAlbums(artist):
 			title = release.title
 			if title.find("(disc ")!=-1:
 				title = title[:title.find("(disc ")].strip()
-			ret[title] = {"when":release.getEarliestReleaseDate(), "ASIN":release.asin}
+
+			#assert title not in ret.keys(),(title, release)
+			ret[title] = {"when":release.getEarliestReleaseDate(), "asin":release.asin}
 			print "got", title
 
 		for title in ret:
-			cur.execute("insert into musicbrainz values(?, ?, ?, ?)", (artist, title, ret[title]["ASIN"], ret[title]["when"]))
+			cur.execute("insert into musicbrainz values(?, ?, ?, ?)", (artist, title, ret[title]["asin"], ret[title]["when"]))
 		con.commit()
 	else:
 		ret = {}
@@ -205,6 +209,11 @@ print most_tracks
 cur.execute("select name from sqlite_master where type='table' and name='musicbrainz'")
 if len(cur.fetchall())==0:
 	cur.execute("create table musicbrainz (artist text(100), album text(100), asin text(20), date integer, primary key(artist, album));")
+	con.commit()
+
+cur.execute("select name from sqlite_master where type='table' and name='amazon'")
+if len(cur.fetchall())==0:
+	cur.execute("create table amazon (artist text(100), album text(100), url text(500), image text(500), lowest_new integer, primary key(artist, album));")
 	con.commit()
 
 def compact(inp):
@@ -239,7 +248,18 @@ for artist in most_tracks:
 
 	for a in albums.keys():
 		if albums[a]['when'] > newest:
-			print "don't have",a
-			raise Exception,albums[a]
+			print "don't have",a, albums[a]['asin'], artist
+			cur.execute("select url, image, lowest_new from amazon where artist=? and album=?",(artist, a))
+			d = cur.fetchall()
+			if d == []:
+				results = amazon.searchByTitle(artist, a)
+				cur.execute("insert into amazon values(?, ?, ?, ?, ?)",(artist, a, unicode(results["url"]), unicode(results["image"]), results["lowest_new"]))
+				con.commit()
+			else:
+				d = d[0]
+				results = {"title":a, "url":d[0], "image":d[1], "lowest_new":d[2]}
+			print results
+			#raise Exception,albums[a]
 	#break
+
 
