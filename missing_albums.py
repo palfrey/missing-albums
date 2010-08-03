@@ -135,7 +135,7 @@ logger = logging.getLogger()
 #logger.setLevel(logging.DEBUG)
 
 def getAlbums(artist):
-	cur.execute("select album, asin, date from musicbrainz where artist=?", (artist,))
+	cur.execute("select album, asin, date, ep from musicbrainz where artist=?", (artist,))
 	d = cur.fetchall()
 	if d == []:
 		q = ws.Query()
@@ -149,21 +149,23 @@ def getAlbums(artist):
 		release_ids = []
 
 		for kind in (m.Release.TYPE_ALBUM, m.Release.TYPE_EP):
-			try:
-				# The result should include all official albums.
-				#
-				inc = ws.ArtistIncludes(
-					releases=(m.Release.TYPE_OFFICIAL, kind),
-					tags=True)
-				release_ids.extend([x.id for x in q.getArtistById(artist_id, inc).getReleases()])
-			except ws.WebServiceError, e:
-				raise
+			while True:
+				try:
+					# The result should include all official albums.
+					#
+					inc = ws.ArtistIncludes(
+						releases=(m.Release.TYPE_OFFICIAL, kind),
+						tags=True)
+					release_ids.extend([(x.id,kind) for x in q.getArtistById(artist_id, inc).getReleases()])
+				except ws.WebServiceError, e:
+					print dir(e),e.msg, e.message
+					sleep(2)
 
 		if release_ids == []:
 			raise Exception, "No releases found for %s"%artist
 
 		ret = {}
-		for id in release_ids:
+		for (id,kind) in release_ids:
 			inc = ws.ReleaseIncludes(artist=True, releaseEvents=True)
 			while True:
 				try:
@@ -178,17 +180,29 @@ def getAlbums(artist):
 				title = title[:title.find("(disc ")].strip()
 
 			#assert title not in ret.keys(),(title, release)
-			ret[title] = {"when":release.getEarliestReleaseDate(), "asin":release.asin}
+			ret[title] = {"when":release.getEarliestReleaseDate(), "asin":release.asin, "ep": kind == m.Release.TYPE_EP}
 			print "got", title
 
 		for title in ret:
-			cur.execute("insert into musicbrainz values(?, ?, ?, ?)", (artist, title, ret[title]["asin"], ret[title]["when"]))
+			cur.execute("insert into musicbrainz values(?, ?, ?, ?, ?)", (artist, title, ret[title]["asin"], ret[title]["when"], ret[title]["ep"]))
 		con.commit()
 	else:
 		ret = {}
-		for (album, asin, when) in d:
-			ret[album] = {"asin":asin, "when":when}
-	for title in ret:
+		for (album, asin, when, ep) in d:
+			ret[album] = {"asin":asin, "when":when, "ep": ep}
+
+	keys = ret.keys()
+
+	for title in keys:
+		if title.find("(")!=-1:
+			stripped = title[:title.find("(")].strip()
+			if stripped[-1] == ".":
+				stripped = stripped[:-1]
+			if stripped in ret.keys():
+				print "removed", title, stripped
+				del ret[title]
+				continue
+
 		try:
 			ret[title]["when"] = strptime(ret[title]["when"], "%Y-%m-%d")
 		except ValueError:
@@ -208,7 +222,7 @@ print most_tracks
 
 cur.execute("select name from sqlite_master where type='table' and name='musicbrainz'")
 if len(cur.fetchall())==0:
-	cur.execute("create table musicbrainz (artist text(100), album text(100), asin text(20), date integer, primary key(artist, album));")
+	cur.execute("create table musicbrainz (artist text(100), album text(100), asin text(20), date integer, ep boolean, primary key(artist, album));")
 	con.commit()
 
 cur.execute("select name from sqlite_master where type='table' and name='amazon'")
@@ -247,7 +261,7 @@ for artist in most_tracks:
 			print "Can't find '%s'"%got_a, albums.keys()
 
 	for a in albums.keys():
-		if albums[a]['when'] > newest:
+		if albums[a]['when'] > newest and not albums[a]['ep']:
 			print "don't have",a, albums[a]['asin'], artist
 			cur.execute("select url, image, lowest_new from amazon where artist=? and album=?",(artist, a))
 			d = cur.fetchall()
