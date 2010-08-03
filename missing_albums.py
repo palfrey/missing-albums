@@ -143,7 +143,7 @@ def getAlbums(artist):
 		f = ws.ArtistFilter(name=artist, limit=5)
 		artistResults = q.getArtists(f)
 
-		assert artistResults[0].artist.name == artist, (artistResults[0].artist.name,artist)
+		#assert artistResults[0].artist.name == artist, (artistResults[0].artist.name,artist)
 		artist_id = artistResults[0].artist.id
 
 		release_ids = []
