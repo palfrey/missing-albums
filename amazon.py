@@ -10,7 +10,9 @@ def searchByTitle(artist, album):
 	data = amazon.item_search("Music", Artist=artist, Title=album, ResponseGroup="Small,ItemAttributes,Images,OfferSummary")
 
 	binding = data.Items.Item.ItemAttributes.Binding
-	assert binding == "Audio CD", binding
+	if binding!="Audio CD":
+		file("dump","wb").write(etree.tostring(data, pretty_print=True))
+		raise Exception, binding
 
 	ret["title"] = data.Items.Item.ItemAttributes.Title
 	ret["url"] = data.Items.Item.DetailPageURL
