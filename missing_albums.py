@@ -141,7 +141,13 @@ def getAlbums(artist):
 		q = ws.Query()
 
 		f = ws.ArtistFilter(name=artist, limit=5)
-		artistResults = q.getArtists(f)
+		while True:
+			try:
+				artistResults = q.getArtists(f)
+				break
+			except ws.WebServiceError, e:
+				print dir(e),e.msg, e.message
+				raise
 
 		#assert artistResults[0].artist.name == artist, (artistResults[0].artist.name,artist)
 		artist_id = artistResults[0].artist.id
@@ -171,7 +177,8 @@ def getAlbums(artist):
 				try:
 					release = q.getReleaseById(id, inc)
 					break
-				except ws.WebServiceError:
+				except ws.WebServiceError, e:
+					print dir(e),e.msg, e.message
 					sleep(2)
 			if release.asin == None: # ignore these
 				continue
