@@ -93,7 +93,9 @@ if opts.walk:
 			if d==[]:
 				try:
 					data = File(fp, options=options)
-				except IOError:
+				except IOError,e:
+					print e
+					print "rebuilding song db"
 					data = None
 				if data == None:
 					cur.execute("insert into songs (fullpath,duration) values(?,?)",(fp, -1))
@@ -128,7 +130,7 @@ for (artist, album,title) in d:
 	if artist not in artists:
 		artists[artist] = {}
 	artists[artist][album] = title
-print artists.keys()
+#print artists.keys()
 
 logging.basicConfig()
 logger = logging.getLogger()
@@ -150,6 +152,7 @@ def getAlbums(artist):
 				raise
 
 		#assert artistResults[0].artist.name == artist, (artistResults[0].artist.name,artist)
+		print "name", artistResults[0].artist.name
 		artist_id = artistResults[0].artist.id
 
 		release_ids = []
@@ -163,12 +166,16 @@ def getAlbums(artist):
 						releases=(m.Release.TYPE_OFFICIAL, kind),
 						tags=True)
 					release_ids.extend([(x.id,kind) for x in q.getArtistById(artist_id, inc).getReleases()])
+					break
 				except ws.WebServiceError, e:
 					print dir(e),e.msg, e.message
 					sleep(2)
 
 		if release_ids == []:
-			raise Exception, "No releases found for %s"%artist
+			print "No releases found for %s"%artist
+			return {}
+
+		print "release ids", release_ids
 
 		ret = {}
 		for (id,kind) in release_ids:
@@ -178,8 +185,8 @@ def getAlbums(artist):
 					release = q.getReleaseById(id, inc)
 					break
 				except ws.WebServiceError, e:
-					print dir(e),e.msg, e.message
-					sleep(2)
+					print e.msg, e.message
+					sleep(3)
 			if release.asin == None: # ignore these
 				continue
 			title = release.title
@@ -220,6 +227,8 @@ def getAlbums(artist):
 		except TypeError:
 			if type(ret[title]["when"]) == IntType:
 				ret[title]["when"] = (ret[title]["when"], 0,0,0,0,0,0,0,0)
+			elif ret[title]["when"] == None:
+				pass
 			else:
 				raise
 	return ret
@@ -234,7 +243,7 @@ if len(cur.fetchall())==0:
 
 cur.execute("select name from sqlite_master where type='table' and name='amazon'")
 if len(cur.fetchall())==0:
-	cur.execute("create table amazon (artist text(100), album text(100), url text(500), image text(500), lowest_new integer, primary key(artist, album));")
+	cur.execute("create table amazon (artist text(100), album text(100), url text(500), image text(500), amazon_new integer, primary key(artist, album));")
 	con.commit()
 
 def compact(inp):
@@ -258,7 +267,7 @@ for artist in most_tracks:
 					if i not in compact(k):
 						break
 				else:
-					print "found all bits", items, k
+					#print "found all bits", items, k
 					use_a = k
 					break
 		if use_a != None:
@@ -270,15 +279,15 @@ for artist in most_tracks:
 	for a in albums.keys():
 		if albums[a]['when'] > newest and not albums[a]['ep']:
 			print "don't have",a, albums[a]['asin'], artist
-			cur.execute("select url, image, lowest_new from amazon where artist=? and album=?",(artist, a))
+			cur.execute("select url, image, amazon_new from amazon where artist=? and album=?",(artist, a))
 			d = cur.fetchall()
 			if d == []:
 				results = amazon.searchByTitle(artist, a)
-				cur.execute("insert into amazon values(?, ?, ?, ?, ?)",(artist, a, unicode(results["url"]), unicode(results["image"]), results["lowest_new"]))
+				cur.execute("insert into amazon values(?, ?, ?, ?, ?)",(artist, a, unicode(results["url"]), unicode(results["image"]), results["amazon_new"]))
 				con.commit()
 			else:
 				d = d[0]
-				results = {"title":a, "url":d[0], "image":d[1], "lowest_new":d[2]}
+				results = {"title":a, "url":d[0], "image":d[1], "amazon_new":d[2]}
 			print results
 			#raise Exception,albums[a]
 	#break
