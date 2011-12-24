@@ -160,10 +160,9 @@ def getAlbums(artist):
 				artistResults = q.getArtists(f)
 				break
 			except ws.WebServiceError, e:
-				print dir(e),e.msg, e.message
-				raise
+				print "problem during artist name", e.msg, e.reason
+				sleep(5)
 
-		#assert artistResults[0].artist.name == artist, (artistResults[0].artist.name,artist)
 		print "name", artistResults[0].artist.name
 		artist_id = artistResults[0].artist.id
 
@@ -180,11 +179,12 @@ def getAlbums(artist):
 					release_ids.extend([(x.id,kind) for x in q.getArtistById(artist_id, inc).getReleases()])
 					break
 				except ws.WebServiceError, e:
-					print dir(e),e.msg, e.message
-					sleep(2)
+					print "problem during releases", e.msg, e.reason
+					sleep(5)
 
 		if release_ids == []:
 			print "No releases found for %s"%artist
+			raise Exception
 			return {}
 
 		print "release ids", release_ids
@@ -197,8 +197,8 @@ def getAlbums(artist):
 					release = q.getReleaseById(id, inc)
 					break
 				except ws.WebServiceError, e:
-					print e.msg, e.message
-					sleep(3)
+					print "problem during release", e.msg, e.reason
+					sleep(5)
 			if release.asin == None: # ignore these
 				continue
 			title = release.title
