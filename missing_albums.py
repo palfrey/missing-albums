@@ -157,7 +157,7 @@ def getAlbums(artist):
 	if d == []:
 		q = ws.Query()
 
-		f = ws.ArtistFilter(name=artist, limit=5)
+		f = ws.ArtistFilter(query=artist, limit=5)
 		while True:
 			try:
 				artistResults = q.getArtists(f)
