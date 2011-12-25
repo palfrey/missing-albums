@@ -34,13 +34,13 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-m","--music-dir",dest="directory",default=".",help="Pick music files directory. Default is current directory")
 parser.add_option("-d","--database",dest="db", default="songs.db",help="Songs database file")
-parser.add_option("--overrides", dest="overrides", default="None", help="Overrides info file")
+parser.add_option("--overrides", dest="overrides", default=None, help="Overrides info file")
 parser.add_option("--no-walk",dest="walk",default="True",action="store_false",help="Don't re-read music directory")
 (opts,args) = parser.parse_args()
 
 overrides = {"artist": {}}
 
-if opts.overrides!=None:
+if opts.overrides != None:
 	for line in open(opts.overrides).readlines():
 		key, value = [x.strip() for x in line.split("=",1)]
 		if key == "artist":
