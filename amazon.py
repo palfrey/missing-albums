@@ -29,7 +29,10 @@ def searchByTitle(artist, album):
 
 		ret["title"] = item.ItemAttributes.Title
 		ret["url"] = item.DetailPageURL
-		ret["image"] = item.LargeImage.URL
+		if hasattr(item, "LargeImage"):
+			ret["image"] = item.LargeImage.URL
+		else:
+			ret["image"] = None
 		#ret["lowest_new"] = int(item.OfferSummary.LowestNewPrice.Amount)
 		ret["amazon_new"] = int(item.Offers.Offer.OfferListing.Price.Amount)
 		return ret
