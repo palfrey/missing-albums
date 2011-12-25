@@ -1,5 +1,6 @@
 import amazonproduct
 from lxml import etree
+from time import sleep
 
 # AWS, then SECRET, then associate id
 keys = [x.strip() for x in file(".amazonkey").readlines()]
@@ -14,10 +15,15 @@ def _empty(album):
 	return ret
 
 def searchByTitle(artist, album):
-	try:
-		root = amazon.item_search("Music", Artist=artist, Title=album, ResponseGroup="Small,ItemAttributes,Images,Offers", AssociateTag = keys[2], MerchantId = "Amazon", Condition = "New")
-	except amazonproduct.errors.NoExactMatchesFound:
-		return _empty(album)
+	while True:
+		try:
+			root = amazon.item_search("Music", Artist=artist, Title=album, ResponseGroup="Small,ItemAttributes,Images,Offers", AssociateTag = keys[2], MerchantId = "Amazon", Condition = "New")
+			break
+		except amazonproduct.errors.NoExactMatchesFound:
+			return _empty(album)
+		except BaseException, e:
+			print "Other exception while doing amazon", e
+			sleep(3)
 
 	page = root.page(1)
 	ret = {}
