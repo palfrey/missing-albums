@@ -163,29 +163,33 @@ def getAlbums(artist):
 				print "problem during artist name", e.msg, e.reason
 				sleep(5)
 
-		print "name", artistResults[0].artist.name
-		artist_id = artistResults[0].artist.id
+		for artistResult in artistResults:
+			print "name", artistResult.artist.name
+			artist_id = artistResult.artist.id
 
-		release_ids = []
+			release_ids = []
 
-		for kind in (m.Release.TYPE_ALBUM, m.Release.TYPE_EP):
-			while True:
-				try:
-					# The result should include all official albums.
-					#
-					inc = ws.ArtistIncludes(
-						releases=(m.Release.TYPE_OFFICIAL, kind),
-						tags=True)
-					release_ids.extend([(x.id,kind) for x in q.getArtistById(artist_id, inc).getReleases()])
-					break
-				except ws.WebServiceError, e:
-					print "problem during releases", e.msg, e.reason
-					sleep(5)
+			for kind in (m.Release.TYPE_ALBUM, m.Release.TYPE_EP):
+				while True:
+					try:
+						# The result should include all official albums.
+						#
+						inc = ws.ArtistIncludes(
+							releases=(m.Release.TYPE_OFFICIAL, kind),
+							tags=True)
+						release_ids.extend([(x.id,kind) for x in q.getArtistById(artist_id, inc).getReleases()])
+						break
+					except ws.WebServiceError, e:
+						print "problem during releases", e.msg, e.reason
+						sleep(5)
 
+			if release_ids == []:
+				print "No releases found for %s"%artist
+				continue
+			else:
+				break
 		if release_ids == []:
-			print "No releases found for %s"%artist
 			raise Exception
-			return {}
 
 		print "release ids", release_ids
 
