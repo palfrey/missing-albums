@@ -226,7 +226,7 @@ def getAlbums(artist):
 	for title in keys:
 		if title.find("(")!=-1:
 			stripped = title[:title.find("(")].strip()
-			if stripped[-1] == ".":
+			if len(stripped)>0 and stripped[-1] == ".":
 				stripped = stripped[:-1]
 			if stripped in ret.keys():
 				print "removed", title, stripped
