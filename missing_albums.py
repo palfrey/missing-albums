@@ -30,6 +30,7 @@ from time import sleep, strptime
 from types import IntType
 
 from optparse import OptionParser
+from ConfigParser import ConfigParser
 
 parser = OptionParser()
 parser.add_option("-m","--music-dir",dest="directory",default=".",help="Pick music files directory. Default is current directory")
@@ -38,16 +39,18 @@ parser.add_option("--overrides", dest="overrides", default=None, help="Overrides
 parser.add_option("--no-walk",dest="walk",default="True",action="store_false",help="Don't re-read music directory")
 (opts,args) = parser.parse_args()
 
-overrides = {"artist": {}}
+overrides = {"artist": {}, "ignore": {}}
 
 if opts.overrides != None:
-	for line in open(opts.overrides).readlines():
-		key, value = [x.strip() for x in line.split("=",1)]
-		if key == "artist":
-			name, alt = value.split(";")
-			overrides["artist"][name] = alt
+	cp = ConfigParser()
+	cp.read([opts.overrides])
+	for section in cp.sections():
+		if section == "artist":
+			overrides["artist"] = dict(cp.items(section))
+		elif section == "ignore":
+			overrides["ignore"] = cp.options(section)
 		else:
-			raise Exception, (key, value)
+			raise Exception, section
 
 class EasyMP3(MP3):
 	def __init__(self, *args, **kwargs):
@@ -267,13 +270,16 @@ def compact(inp):
 	return inp.replace("'","")
 
 for artist in most_tracks:
-	if artist in overrides["artist"]:
-		newartist = overrides["artist"][artist]
+	if artist.lower() in overrides["artist"]:
+		newartist = overrides["artist"][artist.lower()]
 		artists[newartist] = artists[artist]
 		del artists[artist]
 		artist = newartist
 
-	print "artist",artist
+	if artist.lower() in overrides["ignore"]:
+		continue
+
+	print "artist",artist, type(artist), artist.encode("utf-8")
 	albums = getAlbums(artist)
 	print artist, albums.keys(), artists[artist]
 
