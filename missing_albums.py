@@ -26,7 +26,7 @@ import sqlite3
 from os import walk
 from os.path import splitext,join, abspath
 import sys
-from time import sleep, strptime
+from time import sleep, strptime, struct_time
 from types import IntType
 
 from optparse import OptionParser
@@ -250,12 +250,12 @@ def getAlbums(artist):
 			ret[title]["when"] = strptime(ret[title]["when"], "%Y-%m-%d")
 		except ValueError:
 			if ret[title]["when"].find("-")!=-1:
-				ret[title]["when"] = int(ret[title]["when"][:ret[title]["when"].find("-")])
+				ret[title]["when"] = struct_time((int(ret[title]["when"][:ret[title]["when"].find("-")]),0,0,0,0,0,0,0,0))
 			else:
-				ret[title]["when"] = int(ret[title]["when"])
+				ret[title]["when"] = struct_time((int(ret[title]["when"]),0,0,0,0,0,0,0,0))
 		except TypeError:
 			if type(ret[title]["when"]) == IntType:
-				ret[title]["when"] = (ret[title]["when"], 0,0,0,0,0,0,0,0)
+				ret[title]["when"] = struct_time((ret[title]["when"],0,0,0,0,0,0,0,0))
 			elif ret[title]["when"] == None:
 				pass
 			else:
