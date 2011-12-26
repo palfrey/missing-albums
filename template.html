@@ -1,0 +1,52 @@
+<html>
+	<body>
+		<h2>Missing albums (newest first)</h2>
+		{% for link in links %}
+			{% if index == link[0] %}
+				${link[0]}
+			{% end %}
+			{% if index != link[0] %}
+				<a href="${link[1]}">${link[0]}</a>
+			{% end %}
+		{% end %}
+		<table width="100%">
+		{% for album in albums %}
+		{% python
+			from time import strftime
+			when = strftime("%a, %d %b %Y", album["when"])
+			if album["amazon_new"]!=None:
+				amazon_new = "&pound;" + "%.2f"%(album["amazon_new"]/100.00)
+			else:
+				amazon_new = "Unknown"
+			has_url = album["url"] != None
+			%}
+			{% if has_url %}
+				<tr width="100%">
+					<td>
+						<a href="${ album["url"] }">${ album["artist"] } - ${ album["title"] }</a><br />
+						Date: ${when} <br />
+						Price: ${amazon_new}
+					</td>
+					<td align="right">
+						{% python hasImage = album["image"] != None %}
+						{% if hasImage %}
+							<a href="${ album["url"] }">
+								<img src="${album["image"]}" width="100" />
+							</a>
+						{% end %}
+					</td>
+				</tr>
+
+			{% end %}
+		{% end %}
+		</table>
+		{% for link in links %}
+			{% if index == link[0] %}
+				${link[0]}
+			{% end %}
+			{% if index != link[0] %}
+				<a href="${link[1]}">${link[0]}</a>
+			{% end %}
+		{% end %}
+	</body>
+</html>

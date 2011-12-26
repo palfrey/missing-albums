@@ -28,6 +28,11 @@ from os.path import splitext,join, abspath
 import sys
 from time import sleep, strptime, struct_time
 from types import IntType
+import math
+
+from genshi.template import NewTextTemplate
+from os import mkdir
+from os.path import exists
 
 from optparse import OptionParser
 from ConfigParser import ConfigParser
@@ -291,6 +296,8 @@ def compact(inp):
 	inp = inp.lower()
 	return inp.replace("'","")
 
+missing = {}
+
 for artist in most_tracks:
 	if artist.lower() in overrides["artist"]:
 		newartist = overrides["artist"][artist.lower()]
@@ -328,7 +335,7 @@ for artist in most_tracks:
 
 	for a in albums.keys():
 		if albums[a]['when'] > newest and not albums[a]['ep']:
-			print "don't have",a, albums[a]['asin'], artist
+			#print "don't have",a, albums[a]['asin'], artist
 			cur.execute("select url, image, amazon_new from amazon where artist=? and album=?",(artist, a))
 			d = cur.fetchall()
 			if d == []:
@@ -337,9 +344,48 @@ for artist in most_tracks:
 				con.commit()
 			else:
 				d = d[0]
+				def realNone(x):
+					if x == "None":
+						return None
+					else:
+						return x
+				d = [realNone(x) for x in d]
 				results = {"title":a, "url":d[0], "image":d[1], "amazon_new":d[2]}
-			print results
+			print "missing",results, albums[a]['when'], artist
+			when = albums[a]['when']
+			if when not in missing:
+				missing[when] = []
+			results["artist"] = artist
+			results["when"] = when
+			missing[when].append(results)
 			#raise Exception,albums[a]
 	#break
 
+folder = "output"
 
+if not exists(folder):
+	mkdir(folder)
+
+flattened = []
+for key in sorted(missing, reverse = True):
+	flattened.extend(missing[key])
+count = len(flattened)
+perpage = 10
+pages = int(math.ceil(count/(perpage*1.0)))
+
+print count, pages
+
+links = [("1", "index.html")] + [(str(x), "index%03d.html"%x) for x in range(2, pages+1)]
+
+for start in range(0, count, perpage):
+	index = (start/perpage) + 1
+
+	if index == 1:
+		name = "index.html"
+	else:
+		name = "index%03d.html"%index
+
+	print flattened[start:start+perpage]
+
+	nt = NewTextTemplate(file("template.html").read())
+	open(join(folder,name), "wb").write(nt.generate(albums = flattened[start:start+perpage], links = links, index = str(index)).render())
