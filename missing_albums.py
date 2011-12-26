@@ -26,7 +26,7 @@ import sqlite3
 from os import walk
 from os.path import splitext,join, abspath
 import sys
-from time import sleep, strptime, struct_time
+from time import sleep, strptime, struct_time, localtime
 from types import IntType
 import math
 
@@ -368,6 +368,8 @@ if not exists(folder):
 
 flattened = []
 for key in sorted(missing, reverse = True):
+	if key > localtime(): # ignore items not released yet
+		continue
 	flattened.extend(missing[key])
 count = len(flattened)
 perpage = 10
