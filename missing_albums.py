@@ -139,12 +139,17 @@ if opts.walk:
 
 cur.execute("select artist,album, count(title) from songs group by artist,album having count(title)>2 and artist!=\"\"")
 artists = {}
+lower = {}
 d = cur.fetchall()
 #print d
 for (artist, album,title) in d:
+	if artist.lower() in lower:
+		artist = lower[artist.lower()]
 	if artist not in artists:
 		artists[artist] = {}
+		lower[artist.lower()] = artist
 	artists[artist][album] = title
+	
 #print artists.keys()
 
 logging.basicConfig()
@@ -221,7 +226,12 @@ def getAlbums(artist):
 		con.commit()
 	else:
 		ret = {}
+		lower = {}
 		for (album, asin, when, ep) in d:
+			if album.lower() in lower:
+				album = lower[album.lower()]
+			else:
+				lower[album.lower()] = album
 			ret[album] = {"asin":asin, "when":when, "ep": ep}
 
 	keys = ret.keys()
