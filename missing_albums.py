@@ -177,7 +177,7 @@ def getAlbums(artist):
 
 			release_ids = []
 
-			for kind in (m.Release.TYPE_ALBUM, m.Release.TYPE_EP):
+			for kind in (m.Release.TYPE_ALBUM, m.Release.TYPE_EP, m.Release.TYPE_SOUNDTRACK, m.Release.TYPE_LIVE):
 				while True:
 					try:
 						# The result should include all official albums.
