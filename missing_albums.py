@@ -171,6 +171,7 @@ def getAlbums(artist):
 				print "problem during artist name", e
 				sleep(5)
 
+		ret = {}
 		for artistResult in artistResults:
 			print "name", artistResult.artist.name
 			artist_id = artistResult.artist.id
@@ -194,33 +195,44 @@ def getAlbums(artist):
 			if release_ids == []:
 				print "No releases found for %s"%artist
 				continue
+
+			print "release ids", release_ids
+
+			ret = {}
+			lower = {}
+			for (id,kind) in release_ids:
+				inc = ws.ReleaseIncludes(artist=True, releaseEvents=True)
+				while True:
+					try:
+						release = q.getReleaseById(id, inc)
+						break
+					except BaseException, e:
+						print "problem during release", e
+						sleep(5)
+				if release.asin == None: # ignore these
+					print "skipping because no ASIN:", id, release.title
+					continue
+				title = release.title
+				if title.find("(disc ")!=-1:
+					title = title[:title.find("(disc ")].strip()
+
+				#assert title not in ret.keys(),(title, release)
+				if title.lower() in lower:
+					title = lower[title.lower()]
+				else:
+					lower[title.lower()] = title
+
+				ret[title] = {"when":release.getEarliestReleaseDate(), "asin":release.asin, "ep": kind == m.Release.TYPE_EP}
+				print "got", title
+
+			if ret == {}:
+				print "no usable releases"
+				continue
 			else:
 				break
-		if release_ids == []:
-			raise Exception
-
-		print "release ids", release_ids
-
-		ret = {}
-		for (id,kind) in release_ids:
-			inc = ws.ReleaseIncludes(artist=True, releaseEvents=True)
-			while True:
-				try:
-					release = q.getReleaseById(id, inc)
-					break
-				except BaseException, e:
-					print "problem during release", e
-					sleep(5)
-			if release.asin == None: # ignore these
-				continue
-			title = release.title
-			if title.find("(disc ")!=-1:
-				title = title[:title.find("(disc ")].strip()
-
-			#assert title not in ret.keys(),(title, release)
-			ret[title] = {"when":release.getEarliestReleaseDate(), "asin":release.asin, "ep": kind == m.Release.TYPE_EP}
-			print "got", title
-
+		
+		if ret == {}:
+			raise Exception, "No usable albums/artists found for %s. Try fixing one of the entries marked 'skipping because no ASIN', or add to the ignore list"%artist
 		for title in ret:
 			cur.execute("insert into musicbrainz values(?, ?, ?, ?, ?)", (artist, title, ret[title]["asin"], ret[title]["when"], ret[title]["ep"]))
 		con.commit()
