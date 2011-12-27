@@ -279,7 +279,7 @@ def getAlbums(artist):
 				raise
 	return ret
 
-most_tracks = sorted(artists.keys(), lambda x,y:cmp(sum(artists[y].values()), sum(artists[x].values())))
+most_tracks = [x for x in sorted(artists.keys(), lambda x,y:cmp(sum(artists[y].values()), sum(artists[x].values()))) if sum(artists[x].values())>3]
 print most_tracks
 
 cur.execute("select name from sqlite_master where type='table' and name='musicbrainz'")
