@@ -19,6 +19,7 @@
 			else:
 				amazon_new = "Unknown"
 			has_url = album["url"] != None
+			encoded_title = ("%s %s"%(album["artist"], album["title"])).replace(" ", "+")
 			%}
 			{% if has_url %}
 				<tr width="100%">
@@ -26,6 +27,10 @@
 						<a href="${ album["url"] }">${ album["artist"] } - ${ album["title"] }</a><br />
 						Date: ${when} <br />
 						Price: ${amazon_new}
+					</td>
+					<td>
+						<a href="http://www.find-cd.co.uk/search.aspx?title=${encoded_title}&type=keywords">Find-cd</a><br />
+						<a href="http://hmv.com/hmvweb/simpleMultiSearch.do?searchUID=&pGroupID=0&adultFlag=false&simpleSearchString=${encoded_title}&primaryID=0&btnSubmitSearch.x=0&btnSubmitSearch.y=0">HMV</a>
 					</td>
 					<td align="right">
 						{% python hasImage = album["image"] != None %}
