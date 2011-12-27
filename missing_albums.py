@@ -370,7 +370,7 @@ flattened = []
 for key in sorted(missing, reverse = True):
 	if key > localtime(): # ignore items not released yet
 		continue
-	flattened.extend(missing[key])
+	flattened.extend([x for x in missing[key] if x["url"]!=None])
 count = len(flattened)
 perpage = 10
 pages = int(math.ceil(count/(perpage*1.0)))
