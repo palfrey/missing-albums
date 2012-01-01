@@ -29,6 +29,7 @@ import sys
 from time import sleep, strptime, struct_time, localtime
 from types import IntType
 import math
+import codecs
 
 from genshi.template import NewTextTemplate
 from os import mkdir
@@ -42,6 +43,7 @@ parser.add_option("-m","--music-dir",dest="directory",default=".",help="Pick mus
 parser.add_option("-d","--database",dest="db", default="songs.db",help="Songs database file")
 parser.add_option("--overrides", dest="overrides", default=None, help="Overrides info file")
 parser.add_option("--no-walk",dest="walk",default="True",action="store_false",help="Don't re-read music directory")
+parser.add_option("--artists-only", dest="artistsOnly", default="False", action="store_true", help="Write out simplified artists list")
 (opts,args) = parser.parse_args()
 
 overrides = {"artist": {}, "ignore": {}}
@@ -360,6 +362,22 @@ for artist in most_tracks:
 			missing[when].append(results)
 			#raise Exception,albums[a]
 	#break
+
+artists = {}
+
+if opts.artistsOnly:
+	for when in sorted(missing, reverse = True):
+		for m in missing[when]:
+			if m["artist"] not in artists:
+				artists[m["artist"]] = []
+			artists[m["artist"]].append(m["title"])
+
+	f = codecs.open("artists.txt", "wb", "utf-8")
+	for a in sorted(artists):
+		f.write(u"%s - %s\n"%(a, ", ".join(artists[a])))
+	f.close()
+
+	sys.exit(0)
 
 folder = "output"
 
