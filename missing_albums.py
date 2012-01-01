@@ -296,7 +296,7 @@ if len(cur.fetchall())==0:
 
 def compact(inp):
 	inp = inp.lower()
-	return inp.replace("'","")
+	return inp.replace("'","").replace(","," ").replace("&"," ").replace(":", " ").replace(".", " ")
 
 missing = {}
 
