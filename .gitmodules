@@ -1,3 +1,0 @@
-[submodule "amazon-product"]
-	path = amazon-product
-	url = git://github.com/redtoad/python-amazon-product-api.git

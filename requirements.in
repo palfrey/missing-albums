@@ -1,0 +1,7 @@
+pip-tools
+musicbrainzngs
+mutagen
+Jinja2
+lxml
+six
+requests
