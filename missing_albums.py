@@ -24,7 +24,7 @@ import sqlite3
 from os import walk
 from os.path import join, abspath
 import sys
-from time import sleep, strptime, struct_time, localtime
+from time import sleep, strftime, strptime, struct_time, localtime
 import math
 import codecs
 
@@ -44,7 +44,7 @@ parser.add_option("-m","--music-dir",dest="directory",default=".",help="Pick mus
 parser.add_option("-d","--database",dest="db", default="songs.db",help="Songs database file")
 parser.add_option("--overrides", dest="overrides", default=None, help="Overrides info file")
 parser.add_option("--no-walk",dest="walk",default="True",action="store_false",help="Don't re-read music directory")
-parser.add_option("--artists-only", dest="artistsOnly", default="False", action="store_true", help="Write out simplified artists list")
+parser.add_option("--artists-only", dest="artistsOnly", default=False, action="store_true", help="Write out simplified artists list")
 (opts,args) = parser.parse_args()
 
 overrides = {"artist": {}, "ignore": {}}
@@ -419,4 +419,4 @@ for start in range(0, count, perpage):
 
 	print(flattened[start:start+perpage])
 
-	open(join(folder,name), "wb").write(nt.generate(albums = flattened[start:start+perpage], links = links, index = str(index)).render())
+	open(join(folder,name), "w").write(nt.render(albums = flattened[start:start+perpage], links = links, index = str(index), strftime = strftime))

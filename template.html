@@ -3,51 +3,41 @@
 		<h2>Missing albums (newest first)</h2>
 		{% for link in links %}
 			{% if index == link[0] %}
-				${link[0]}
-			{% end %}
-			{% if index != link[0] %}
-				<a href="${link[1]}">${link[0]}</a>
-			{% end %}
-		{% end %}
+				{{ link[0] }}
+			{% else %}
+				<a href="{{ link[1] }}">{{ link[0] }}</a>
+			{% endif %}
+		{% endfor %}
 		<table width="100%">
 		{% for album in albums %}
-		{% python
-			from time import strftime
-			when = strftime("%a, %d %b %Y", album["when"])
-			if album["amazon_new"]!=None:
-				amazon_new = "&pound;" + "%.2f"%(album["amazon_new"]/100.00)
-			else:
-				amazon_new = "Unknown"
-			encoded_title = ("%s %s"%(album["artist"], album["title"])).replace(" ", "+")
-			%}
+			{% set when = strftime("%a, %d %b %Y", album["when"]) %}
+			{% set encoded_title = ("%s %s"%(album["artist"], album["title"])).replace(" ", "+") %}
 			<tr width="100%">
 				<td>
-					<a href="${ album["url"] }">${ album["artist"] } - ${ album["title"] }</a><br />
-					Date: ${when} <br />
-					Price: ${amazon_new}
+					<a href="{{ album.url }}">{{ album.artist }} - {{ album.title }}</a><br />
+					Date: {{ when }} <br />
 				</td>
 				<td>
 					<a href="http://www.find-cd.co.uk/search.aspx?title=${encoded_title}&type=keywords">Find-cd</a><br />
 					<a href="http://hmv.com/hmvweb/simpleMultiSearch.do?searchUID=&pGroupID=0&adultFlag=false&simpleSearchString=${encoded_title}&primaryID=0&btnSubmitSearch.x=0&btnSubmitSearch.y=0">HMV</a>
 				</td>
 				<td align="right">
-					{% python hasImage = album["image"] != None %}
+					{% set hasImage = album["image"] != None %}
 					{% if hasImage %}
-						<a href="${ album["url"] }">
-							<img src="${album["image"]}" width="100" />
+						<a href="{{ album.url }}">
+							<img src="{{ album.image }}" width="100" />
 						</a>
-					{% end %}
+					{% endif %}
 				</td>
 			</tr>
-		{% end %}
+		{% endfor %}
 		</table>
 		{% for link in links %}
 			{% if index == link[0] %}
-				${link[0]}
-			{% end %}
-			{% if index != link[0] %}
-				<a href="${link[1]}">${link[0]}</a>
-			{% end %}
-		{% end %}
+				{{ link[0] }}
+			{% else %}
+				<a href="{{ link[1] }}">{{ link[0] }}</a>
+			{% endif %}
+		{% endfor %}
 	</body>
 </html>
