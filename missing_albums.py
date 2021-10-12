@@ -209,7 +209,7 @@ def getAlbums(artist):
 			for (id, kind) in release_ids:
 				while True:
 					try:
-						release = musicbrainzngs.get_release_by_id(id, includes=['artists', 'release-rels'])['release']
+						release = musicbrainzngs.get_release_by_id(id, includes=['release-rels', 'release-groups'])['release']
 						break
 					except BaseException as e:
 						print("problem during release", e)
@@ -234,20 +234,21 @@ def getAlbums(artist):
 
 				ret[title] = {"when": release['release-event-list'][0]['date'], "asin": release['asin'], "ep": kind == 'ep'}
 				print("got", title)
-				try:
-					cover_art = musicbrainzngs.get_image_list(id)				
-					for image in cover_art["images"]:
-						if image["front"] is True:
-							cover_path = covers_folder.joinpath(f"{release['asin']}.jpg")
-							if not cover_path.exists():
-								resp = requests.get(image["image"])
-								resp.raise_for_status()
-								cover_path.open("wb").write(resp.content)
-							break
-					else:
-						raise Exception(cover_art)
-				except musicbrainzngs.ResponseError as e:
-					print("error getting cover art", e)
+				cover_path = covers_folder.joinpath(f"{release['asin']}.jpg")
+				if not cover_path.exists():
+					try:			
+						cover_art = musicbrainzngs.get_image_front(id)				
+						cover_path.open("wb").write(cover_art)
+					except musicbrainzngs.ResponseError as e:	
+						if e.cause.code != 404: 					
+							print("error getting cover art", release, e.cause)
+							raise
+
+				if not cover_path.exists():
+					# Main release failed, let's try release group
+					release_group_id = release['release-group']['id']
+					cover_art = musicbrainzngs.get_release_group_image_front(release_group_id)
+					cover_path.open("wb").write(cover_art)
 
 			if ret == {}:
 				print("no usable releases")

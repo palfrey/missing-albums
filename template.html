@@ -25,7 +25,7 @@
 					{% set hasImage = album["image"] != None %}
 					{% if hasImage %}
 						<a href="{{ album.url }}">
-							<img src="{{ album.image }}" width="100" />
+							<img src="../{{ album.image }}" width="100" />
 						</a>
 					{% endif %}
 				</td>
