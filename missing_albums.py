@@ -302,6 +302,10 @@ def getAlbums(artist):
                     )
                     continue
 
+                if "date" not in release["release-event-list"][0]:
+                    print("skipping because no release date", id, release["title"])
+                    continue
+
                 ret[title] = {
                     "when": release["release-event-list"][0]["date"],
                     "asin": release["asin"],
