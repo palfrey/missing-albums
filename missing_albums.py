@@ -321,10 +321,15 @@ def getAlbums(artist):
                 if not cover_path.exists():
                     # Main release failed, let's try release group
                     release_group_id = release["release-group"]["id"]
-                    cover_art = musicbrainzngs.get_release_group_image_front(
-                        release_group_id
-                    )
-                    cover_path.open("wb").write(cover_art)
+                    try:
+                        cover_art = musicbrainzngs.get_release_group_image_front(
+                            release_group_id
+                        )
+                        cover_path.open("wb").write(cover_art)
+                    except musicbrainzngs.ResponseError as e:
+                        if e.cause.code != 404:
+                            print("error getting cover art", release, e.cause)
+                            raise
 
             if ret == {}:
                 print("no usable releases")
