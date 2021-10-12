@@ -5,3 +5,4 @@ Jinja2
 lxml
 six
 requests
+pre-commit

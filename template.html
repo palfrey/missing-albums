@@ -1,43 +1,49 @@
 <html>
-	<body>
-		<h2>Missing albums (newest first)</h2>
-		{% for link in links %}
-			{% if index == link[0] %}
-				{{ link[0] }}
-			{% else %}
-				<a href="{{ link[1] }}">{{ link[0] }}</a>
-			{% endif %}
-		{% endfor %}
-		<table width="100%">
-		{% for album in albums %}
-			{% set when = strftime("%a, %d %b %Y", album["when"]) %}
-			{% set encoded_title = ("%s %s"%(album["artist"], album["title"])).replace(" ", "+") %}
-			<tr width="100%">
-				<td>
-					<a href="{{ album.url }}">{{ album.artist }} - {{ album.title }}</a><br />
-					Date: {{ when }} <br />
-				</td>
-				<td>
-					<a href="https://www.find-cd.co.uk/search.aspx?title={{ encoded_title }}&type=keywords">Find-cd</a><br />
-					<a href="http://hmv.com/hmvweb/simpleMultiSearch.do?searchUID=&pGroupID=0&adultFlag=false&simpleSearchString={{ encoded_title }}&primaryID=0&btnSubmitSearch.x=0&btnSubmitSearch.y=0">HMV</a>
-				</td>
-				<td align="right">
-					{% set hasImage = album["image"] != None %}
-					{% if hasImage %}
-						<a href="{{ album.url }}">
-							<img src="../{{ album.image }}" width="100" />
-						</a>
-					{% endif %}
-				</td>
-			</tr>
-		{% endfor %}
-		</table>
-		{% for link in links %}
-			{% if index == link[0] %}
-				{{ link[0] }}
-			{% else %}
-				<a href="{{ link[1] }}">{{ link[0] }}</a>
-			{% endif %}
-		{% endfor %}
-	</body>
+  <body>
+    <h2>Missing albums (newest first)</h2>
+    {% for link in links %}
+      {% if index == link[0] %}
+        {{ link[0] }}
+      {% else %}
+        <a href="{{ link[1] }}">{{ link[0] }}</a>
+      {% endif %}
+    {% endfor %}
+    <table width="100%">
+      {% for album in albums %}
+        {% set when = strftime("%a, %d %b %Y", album["when"]) %}
+        {% set encoded_title = ("%s %s"%(album["artist"], album["title"])).replace(" ", "+") %}
+        <tr width="100%">
+          <td>
+            <a href="{{ album.url }}">{{ album.artist }} - {{ album.title }}</a
+            ><br />
+            Date: {{ when }} <br />
+          </td>
+          <td>
+            <a
+              href="https://www.find-cd.co.uk/search.aspx?title={{ encoded_title }}&type=keywords"
+              >Find-cd</a
+            ><br />
+            <a
+              href="http://hmv.com/hmvweb/simpleMultiSearch.do?searchUID=&pGroupID=0&adultFlag=false&simpleSearchString={{ encoded_title }}&primaryID=0&btnSubmitSearch.x=0&btnSubmitSearch.y=0"
+              >HMV</a
+            >
+          </td>
+          <td align="right">
+            {% if album["image"] is not None %}
+            <a href="{{ album.url }}">
+              <img src="../{{ album.image }}" width="100" />
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+    {% for link in links %}
+      {% if index == link[0] %}
+        {{ link[0] }}
+      {% else %}
+        <a href="{{ link[1] }}">{{ link[0] }}</a>
+      {% endif %}
+    {% endfor %}
+  </body>
 </html>
