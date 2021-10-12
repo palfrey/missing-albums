@@ -481,7 +481,7 @@ for artist in most_tracks:
 
     for a in list(albums.keys()):
         album = albums[a]
-        if album["when"] > newest and not album["ep"]:
+        if (newest is None or album["when"] > newest) and not album["ep"]:
             print(album)
             results = {
                 "title": a,
