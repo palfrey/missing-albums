@@ -342,6 +342,7 @@ def getAlbums(artist):
                 break
 
         if ret == {}:
+            return None
             raise Exception(
                 "No usable albums/artists found for %s. Try fixing one of the entries marked 'skipping because no ASIN', or add to the ignore list"
                 % artist
@@ -460,6 +461,8 @@ for artist in most_tracks:
 
     print("artist", artist, type(artist), artist.encode("utf-8"))
     albums = getAlbums(artist)
+    if albums is None:
+        continue
     print(artist, list(albums.keys()), artists[artist])
 
     newest = None
