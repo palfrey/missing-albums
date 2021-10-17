@@ -243,26 +243,30 @@ def getAlbums(artist):
 
             release_ids = []
 
-            for kind in ["album", "ep", "soundtrack", "live"]:
+            for kind in ["album", "soundtrack"]:
+                offset = 0
+                MAX_RELEASES = 50
                 while True:
-                    try:
-                        # The result should include all official albums.
-                        releases = musicbrainzngs.browse_releases(
-                            artist=artist_id,
-                            release_status=["official"],
-                            release_type=kind,
-                        )
-                        release_ids.extend(
-                            [
-                                (release["id"], kind)
-                                for release in releases["release-list"]
-                            ]
-                        )
+                    # The result should include all official albums.
+                    print(f"getting {artist_id}, offset {offset}")
+                    releases = musicbrainzngs.browse_releases(
+                        artist=artist_id,
+                        release_status=["official"],
+                        release_type=kind,
+                        limit=MAX_RELEASES,
+                        offset=offset,
+                    )
+                    release_ids.extend(
+                        [
+                            (release["id"], kind)
+                            for release in releases["release-list"]
+                            if release.get("asin", "") != ""
+                        ]
+                    )
+                    if len(releases["release-list"]) == MAX_RELEASES:
+                        offset += MAX_RELEASES
+                    else:
                         break
-                    except BaseException as e:
-                        raise
-                        print("problem during releases", e)
-                        sleep(5)
 
             if release_ids == []:
                 print("No releases found for %s" % artist)
@@ -488,7 +492,9 @@ for artist in most_tracks:
 
     for a in list(albums.keys()):
         album = albums[a]
-        if (newest is None or album["when"] > newest) and not album["ep"]:
+        if newest is None:
+            continue
+        if album["when"] > newest and not album["ep"]:
             print(album)
             results = {
                 "title": a,
