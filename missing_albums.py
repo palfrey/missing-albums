@@ -35,8 +35,6 @@ from os.path import exists
 from optparse import OptionParser
 from configparser import ConfigParser
 
-import requests
-
 musicbrainzngs.set_useragent("Missing Albums", "0.1")
 
 parser = OptionParser()
@@ -239,34 +237,38 @@ def getAlbums(artist):
         for artistResult in artistResults["artist-list"]:
             print(artistResult)
             print("name", artistResult["name"])
+
+            if artistResult["name"] != artist:
+                print("non matching name")
+                continue
+
             artist_id = artistResult["id"]
 
             release_ids = []
 
-            for kind in ["album", "soundtrack"]:
-                offset = 0
-                MAX_RELEASES = 50
-                while True:
-                    # The result should include all official albums.
-                    print(f"getting {artist_id}, offset {offset}")
-                    releases = musicbrainzngs.browse_releases(
-                        artist=artist_id,
-                        release_status=["official"],
-                        release_type=kind,
-                        limit=MAX_RELEASES,
-                        offset=offset,
-                    )
-                    release_ids.extend(
-                        [
-                            (release["id"], kind)
-                            for release in releases["release-list"]
-                            if release.get("asin", "") != ""
-                        ]
-                    )
-                    if len(releases["release-list"]) == MAX_RELEASES:
-                        offset += MAX_RELEASES
-                    else:
-                        break
+            offset = 0
+            MAX_RELEASES = 50
+            while True:
+                # The result should include all official albums.
+                print(f"getting {artist_id}, offset {offset}")
+                releases = musicbrainzngs.browse_releases(
+                    artist=artist_id,
+                    release_status=["official"],
+                    release_type="album",
+                    limit=MAX_RELEASES,
+                    offset=offset,
+                )
+                release_ids.extend(
+                    [
+                        (release["id"], "album")
+                        for release in releases["release-list"]
+                        if release.get("asin", "") != ""
+                    ]
+                )
+                if len(releases["release-list"]) == MAX_RELEASES:
+                    offset += MAX_RELEASES
+                else:
+                    break
 
             if release_ids == []:
                 print("No releases found for %s" % artist)
@@ -315,6 +317,14 @@ def getAlbums(artist):
                     "asin": release["asin"],
                     "ep": kind == "ep",
                 }
+                rg = release["release-group"]
+                types = set(
+                    [rg["type"], rg["primary-type"]] + rg.get("secondary-type-list", [])
+                )
+                allowed_types = set(["Album", "Soundtrack"])
+                if not allowed_types.issuperset(types):
+                    print("Skipping because of", types.difference(allowed_types))
+                    continue
                 print("got", title)
                 cover_path = covers_folder.joinpath(f"{release['asin']}.jpg")
                 if not cover_path.exists():
@@ -448,6 +458,7 @@ def compact(inp):
         .replace("&", " ")
         .replace(":", " ")
         .replace(".", " ")
+        .replace("’", "")
     )
 
 
