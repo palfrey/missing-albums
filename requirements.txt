@@ -54,7 +54,7 @@ toml==0.10.2
     # via pre-commit
 tomli==1.2.1
     # via pep517
-urllib3==1.26.7
+urllib3==1.26.18
     # via requests
 virtualenv==20.8.1
     # via pre-commit
